@@ -1,0 +1,155 @@
+import React, { useState, useEffect } from "react";
+
+/**
+
+TripVibe Hurghada — Single-file React app (default export)
+
+
+---
+
+How to use:
+
+1. Create a React project (Vite or Create React App).
+
+
+
+2. Install and setup Tailwind CSS (the component uses Tailwind classes).
+
+
+
+3. Replace src/App.jsx with this file (or import it into your router).
+
+
+
+4. Start dev server. Site is fully client-side and stores data in localStorage.
+
+
+
+Features built for you (Ismail):
+
+Multi-page layout (Home, Trips, Gallery, About, Contact) using internal state.
+
+
+Fun, colorful design using Tailwind utility classes.
+
+
+Add / Edit / Delete unlimited trips (saved in localStorage).
+
+
+Booking via WhatsApp button (number prefilled: +201091031957). You can change it in WHATSAPP_NUMBER.
+
+
+Editable gallery with image uploads (stored in localStorage as base64 for simplicity).
+
+
+Everything is editable in the UI — add trips, change descriptions, add images.
+
+
+Notes:
+
+This app is intentionally client-side only so you can edit content directly in the browser.
+
+
+For production hosting with many images or many users, connect to a backend or CMS (recommended later). */
+
+
+
+const WHATSAPP_NUMBER = "201091031957"; // change here if needed (no +, in wa.me format)
+
+function useLocalStorage(key, initial) { const [state, setState] = useState(() => { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initial; } catch (e) { return initial; } }); useEffect(() => { try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) { // ignore } }, [key, state]); return [state, setState]; }
+
+function Header({ onNavigate }) { return ( <header className="bg-gradient-to-r from-pink-400 via-orange-300 to-yellow-200 p-4 shadow-md"> <div className="max-w-6xl mx-auto flex items-center justify-between"> <div className="flex items-center gap-3"> <div className="w-12 h-12 rounded-full bg-white/60 flex items-center justify-center text-xl font-bold">TV</div> <div> <h1 className="text-2xl font-extrabold">TripVibe Hurghada</h1> <p className="text-sm">Feel the Adventure — Book via WhatsApp</p> </div> </div> <nav className="flex gap-3 items-center"> <NavButton onClick={() => onNavigate("home")}>Home</NavButton> <NavButton onClick={() => onNavigate("trips")}>Trips</NavButton> <NavButton onClick={() => onNavigate("gallery")}>Gallery</NavButton> <NavButton onClick={() => onNavigate("about")}>About</NavButton> <NavButton onClick={() => onNavigate("contact")}>Contact</NavButton> </nav> </div> </header> ); }
+
+function NavButton({ children, onClick }) { return ( <button
+onClick={onClick}
+className="px-3 py-2 rounded-full text-sm font-semibold hover:scale-105 transition-shadow bg-white/70"
+> {children} </button> ); }
+
+function Hero({ onBook }) { return ( <section className="py-16"> <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8"> <div className="flex-1"> <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">Visit Hurghada — Sun, Sea & Adventure</h2> <p className="mt-4 text-lg">Join our guided safaris, diving trips, Luxor & Cairo tours. Fast booking via WhatsApp.</p> <div className="mt-6 flex gap-3"> <button onClick={() => onBook('')} className="px-6 py-3 rounded-full font-bold shadow-lg bg-green-500 text-white">Book Now (WhatsApp)</button> <button onClick={() => onBook('')} className="px-6 py-3 rounded-full font-bold shadow-lg bg-white">View Trips</button> </div> </div> <div className="flex-1"> <div className="h-56 md:h-72 rounded-xl shadow-lg overflow-hidden bg-gradient-to-br from-yellow-100 to-pink-100 flex items-center justify-center"> <p className="text-xl font-semibold">Your photo here — upload in Gallery</p> </div> </div> </div> </section> ); }
+
+function TripsManager({ trips, setTrips, onBook }) { const [editingTrip, setEditingTrip] = useState(null); const [form, setForm] = useState({ title: "", duration: "", price: "", desc: "" });
+
+useEffect(() => { if (editingTrip) setForm(editingTrip); else setForm({ title: "", duration: "", price: "", desc: "" }); }, [editingTrip]);
+
+function saveTrip(e) { e.preventDefault(); if (!form.title) return alert("Please add a title"); if (editingTrip) { setTrips(trips.map(t => (t.id === editingTrip.id ? { ...editingTrip, ...form } : t))); setEditingTrip(null); } else { const newTrip = { ...form, id: Date.now().toString(), images: [] }; setTrips([newTrip, ...trips]); } }
+
+function removeTrip(id) { if (!window.confirm("Delete this trip?")) return; setTrips(trips.filter(t => t.id !== id)); }
+
+return ( <section className="max-w-6xl mx-auto px-4 py-12"> <div className="flex flex-col md:flex-row gap-8"> <div className="flex-1"> <h3 className="text-2xl font-bold mb-4">Trips</h3> <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {trips.length === 0 && <div className="p-6 bg-white/60 rounded-lg">No trips yet. Use the form to add unlimited trips.</div>} {trips.map(trip => ( <div key={trip.id} className="bg-white/70 rounded-lg p-4 shadow-md"> <div className="flex items-start gap-4"> <div className="w-28 h-20 bg-gray-200 rounded-md flex items-center justify-center">Img</div> <div className="flex-1"> <h4 className="font-bold text-lg">{trip.title}</h4> <p className="text-sm">{trip.desc}</p> <div className="mt-3 flex gap-2"> <button onClick={() => onBook(trip)} className="px-3 py-1 rounded-full text-sm bg-green-500 text-white">Book via WhatsApp</button> <button onClick={() => setEditingTrip(trip)} className="px-3 py-1 rounded-full text-sm bg-white">Edit</button> <button onClick={() => removeTrip(trip.id)} className="px-3 py-1 rounded-full text-sm bg-red-400 text-white">Delete</button> </div> </div> </div> </div> ))} </div> </div>
+
+<aside className="w-full md:w-96 bg-white/80 rounded-lg p-4 shadow-lg">
+      <h4 className="font-bold mb-2">{editingTrip ? "Edit Trip" : "Add a Trip"}</h4>
+      <form onSubmit={saveTrip} className="flex flex-col gap-3">
+        <input className="p-2 rounded border" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Title (e.g. Safari Adventure)" />
+        <input className="p-2 rounded border" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} placeholder="Duration (e.g. 4 hours)" />
+        <input className="p-2 rounded border" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="Price (optional)" />
+        <textarea className="p-2 rounded border" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} placeholder="Short description" />
+        <div className="flex gap-2">
+          <button className="flex-1 px-4 py-2 rounded bg-blue-500 text-white font-bold" type="submit">Save</button>
+          {editingTrip && (
+            <button type="button" onClick={() => setEditingTrip(null)} className="px-4 py-2 rounded bg-gray-200">Cancel</button>
+          )}
+        </div>
+      </form>
+      <div className="mt-4 text-sm text-gray-600">
+        Trips are stored in your browser. You can add infinite trips and edit them later.
+      </div>
+    </aside>
+  </div>
+</section>
+
+); }
+
+function Gallery({ gallery, setGallery }) { function handleFiles(e) { const files = Array.from(e.target.files || []); Promise.all(files.map(f => toBase64(f))).then(images => { setGallery([...images, ...gallery]); }); }
+
+function toBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ id: Date.now().toString() + Math.random(), data: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }); }
+
+function removeImage(id) { setGallery(gallery.filter(g => g.id !== id)); }
+
+return ( <section className="max-w-6xl mx-auto px-4 py-12"> <h3 className="text-2xl font-bold mb-4">Gallery</h3> <div className="mb-4"> <input type="file" multiple accept="image/*" onChange={handleFiles} /> </div> <div className="grid grid-cols-2 md:grid-cols-4 gap-4"> {gallery.map(img => ( <div key={img.id} className="relative rounded overflow-hidden shadow"> <img src={img.data} alt="gallery" className="w-full h-40 object-cover" /> <button onClick={() => removeImage(img.id)} className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded">X</button> </div> ))} </div> </section> ); }
+
+function About() { return ( <section className="max-w-6xl mx-auto px-4 py-12"> <h3 className="text-2xl font-bold mb-3">About TripVibe Hurghada</h3> <p className="text-lg">We are a local team with years of experience running trips in Hurghada. We focus on safe, fun, and unforgettable experiences — from snorkeling and diving to desert safaris and cultural tours to Luxor & Cairo.</p> <p className="mt-4">Edit this text in the Trips admin or in the code later. Add your own logo in the header area.</p> </section> ); }
+
+function Contact({ onBook }) { return ( <section className="max-w-6xl mx-auto px-4 py-12"> <h3 className="text-2xl font-bold mb-4">Contact & Booking</h3> <div className="grid md:grid-cols-2 gap-6"> <div className="bg-white/80 p-4 rounded shadow"> <h4 className="font-bold">Book via WhatsApp</h4> <p className="mt-2">Click the button to open WhatsApp with a prefilled message. Change your number in the code if needed.</p> <div className="mt-4"> <button onClick={() => onBook('')} className="px-4 py-2 rounded bg-green-500 text-white font-bold">Message on WhatsApp</button> </div> </div> <div className="bg-white/80 p-4 rounded shadow"> <h4 className="font-bold">Location & Hours</h4> <p className="mt-2">Hurghada, Red Sea, Egypt</p> <p className="mt-1">Open daily — flexible hours (edit in code)</p> </div> </div> </section> ); }
+
+export default function TripVibeApp() { const [page, setPage] = useState("home"); const [trips, setTrips] = useLocalStorage("tv_trips_v1", []); const [gallery, setGallery] = useLocalStorage("tv_gallery_v1", []);
+
+function openWhatsApp(trip) { const text = trip && trip.title ? Hello! I'm interested in booking the ${trip.title}. : Hello! I'm interested in a trip.; const encoded = encodeURIComponent(text); const url = https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}; window.open(url, "_blank"); }
+
+return ( <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-pink-50 text-gray-900"> <Header onNavigate={setPage} />
+
+<main>
+    {page === "home" && (
+      <>
+        <Hero onBook={() => openWhatsApp(null)} />
+        <section className="max-w-6xl mx-auto px-4 py-6">
+          <h3 className="text-xl font-bold mb-3">Popular Trips</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {trips.slice(0, 3).map(t => (
+              <div key={t.id} className="bg-white/80 p-4 rounded shadow">
+                <h4 className="font-bold">{t.title}</h4>
+                <p className="text-sm">{t.desc}</p>
+                <div className="mt-3">
+                  <button onClick={() => openWhatsApp(t)} className="px-3 py-1 rounded bg-green-500 text-white">Book</button>
+                </div>
+              </div>
+            ))}
+            {trips.length === 0 && <div className="p-4 bg-white/60 rounded">No trips added yet. Add them in Trips page.</div>}
+          </div>
+        </section>
+      </>
+    )}
+
+    {page === "trips" && <TripsManager trips={trips} setTrips={setTrips} onBook={openWhatsApp} />}
+    {page === "gallery" && <Gallery gallery={gallery} setGallery={setGallery} />}
+    {page === "about" && <About />}
+    {page === "contact" && <Contact onBook={openWhatsApp} />}
+  </main>
+
+  <footer className="mt-12 py-6 text-center text-sm text-gray-700">
+    © {new Date().getFullYear()} TripVibe Hurghada — Built for quick WhatsApp bookings
+  </footer>
+</div>
+
+); }
+
